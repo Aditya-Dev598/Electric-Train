@@ -1,5 +1,18 @@
+import importlib.util
 import os
 import traceback
+
+if importlib.util.find_spec("_tkinter") is None:
+    raise SystemExit(
+        "Tkinter is not available in this Python build.\n"
+        "Install a Tk-enabled Python and rerun.\n\n"
+        "macOS (Homebrew):\n"
+        "  brew install tcl-tk\n"
+        "  brew install python-tk@3.12  # or matching Python version\n\n"
+        "Ubuntu/Debian:\n"
+        "  sudo apt-get install python3-tk\n"
+    )
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
