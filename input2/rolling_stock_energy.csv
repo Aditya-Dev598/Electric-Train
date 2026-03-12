@@ -1,0 +1,2 @@
+train_type,kwh_per_km_per_car,aux_kw_per_car,drive_eff,regen_eff,line_losses_pct
+CAF_URBOS_3,0.7,6,0.9,0.25,0.05
