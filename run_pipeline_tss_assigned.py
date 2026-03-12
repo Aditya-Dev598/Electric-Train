@@ -4,9 +4,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-HALF_HOURS = [f"{h}:{m:02d}" for h in range(0,24) for m in (30,0)][1:]  # 0:30 .. 23:30, then add 24:00 later
-HALF_HOURS = ["0:30"] + [f"{h}:00" for h in range(1,24) for _ in (0,) ]  # will rebuild properly below
-
 def build_bins():
     labels=[]
     # 00:00-00:30 is reported as 0:30, then 1:00 ... 23:30, 24:00
@@ -52,7 +49,9 @@ def load_or_make_energy_params(path: str, train_types: list[str]):
         })
     df = pd.DataFrame(rows)
     if path:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         df.to_csv(path, index=False)
         print(f"[info] wrote default energy_params to {path} (please calibrate values).")
     return df
@@ -188,7 +187,8 @@ def aggregate_half_hour(events: pd.DataFrame):
     """Return dict tss -> daily half-hour dataframe"""
     # keep only normal event rows
     ev = events.copy()
-    ev = ev[ev.get("missing_tss", False) != True] if "missing_tss" in ev.columns else ev
+    if "missing_tss" in ev.columns:
+        ev = ev[ev["missing_tss"] != True]
     if ev.empty:
         return {}
 
@@ -205,11 +205,11 @@ def aggregate_half_hour(events: pd.DataFrame):
                 bins += allocate_interval_kwh_to_bins(r["start"], r["end"], float(r["kwh"]), edges)
             # build row
             total = bins.sum()
-            row = {"Date": day_dt.strftime("%d/%m/%Y"), "Day": day_dt.strftime("%A"), "Total Units": total}
+            row = {"Date": day_dt.strftime("%d/%m/%Y"), "Date_dt": day_dt, "Day": day_dt.strftime("%A"), "Total Units": total}
             for label, val in zip(BIN_LABELS, bins):
                 row[label] = val
             rows.append(row)
-        df = pd.DataFrame(rows).sort_values("Date")
+        df = pd.DataFrame(rows).sort_values("Date_dt").drop(columns=["Date_dt"])
         out_by_tss[tss]=df
     return out_by_tss
 
