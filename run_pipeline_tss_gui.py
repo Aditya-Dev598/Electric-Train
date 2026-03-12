@@ -30,7 +30,7 @@ class PipelineGui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("TSS Energy Pipeline GUI")
-        self.geometry("1300x800")
+        self.geometry("1300x850")
 
         self.simple_timetable_var = tk.StringVar()
         self.route_template_var = tk.StringVar()
@@ -40,7 +40,12 @@ class PipelineGui(tk.Tk):
         self.regen_eff_var = tk.StringVar(value="0.25")
         self.split_cross_tss_var = tk.StringVar(value="0.5")
 
+        self.summary_tss_var = tk.StringVar()
+        self.summary_col_var = tk.StringVar()
+        self.summary_result_var = tk.StringVar(value="Run the pipeline, then pick a TSS and column.")
+
         self.output_frames = []
+        self.output_dataframes = {}
 
         self._build_ui()
 
@@ -69,6 +74,23 @@ class PipelineGui(tk.Tk):
 
         ttk.Button(actions, text="Run pipeline", command=self.run_pipeline).pack(side=tk.LEFT)
         ttk.Button(actions, text="Open output folder", command=self.open_output_folder).pack(side=tk.LEFT, padx=(8, 0))
+
+        summary = ttk.LabelFrame(container, text="Column summary tools", padding=10)
+        summary.pack(fill=tk.X, pady=(0, 8))
+
+        ttk.Label(summary, text="TSS").grid(row=0, column=0, sticky="w")
+        self.summary_tss_combo = ttk.Combobox(summary, textvariable=self.summary_tss_var, state="readonly", width=35)
+        self.summary_tss_combo.grid(row=0, column=1, padx=(8, 20), sticky="w")
+        self.summary_tss_combo.bind("<<ComboboxSelected>>", self._on_tss_selected)
+
+        ttk.Label(summary, text="Column").grid(row=0, column=2, sticky="w")
+        self.summary_col_combo = ttk.Combobox(summary, textvariable=self.summary_col_var, state="readonly", width=35)
+        self.summary_col_combo.grid(row=0, column=3, padx=(8, 20), sticky="w")
+
+        ttk.Button(summary, text="Calculate sum", command=self.calculate_sum).grid(row=0, column=4, padx=(0, 8))
+        ttk.Button(summary, text="Calculate average", command=self.calculate_average).grid(row=0, column=5)
+
+        ttk.Label(summary, textvariable=self.summary_result_var).grid(row=1, column=0, columnspan=6, sticky="w", pady=(8, 0))
 
         self.status_var = tk.StringVar(value="Select your files and click 'Run pipeline'.")
         ttk.Label(container, textvariable=self.status_var).pack(fill=tk.X)
@@ -161,6 +183,54 @@ class PipelineGui(tk.Tk):
 
         return energy_params_path or None, outdir, regen_eff, split_cross_tss
 
+    def _refresh_summary_options(self):
+        tss_names = list(self.output_dataframes.keys())
+        self.summary_tss_combo["values"] = tss_names
+        self.summary_tss_var.set(tss_names[0] if tss_names else "")
+        self._on_tss_selected()
+
+    def _on_tss_selected(self, *_):
+        tss = self.summary_tss_var.get()
+        if not tss or tss not in self.output_dataframes:
+            self.summary_col_combo["values"] = []
+            self.summary_col_var.set("")
+            return
+
+        columns = list(self.output_dataframes[tss].columns)
+        self.summary_col_combo["values"] = columns
+        self.summary_col_var.set(columns[0] if columns else "")
+
+    def _selected_series(self):
+        tss = self.summary_tss_var.get().strip()
+        col = self.summary_col_var.get().strip()
+        if not tss:
+            raise ValueError("Select a TSS first.")
+        if tss not in self.output_dataframes:
+            raise ValueError("Selected TSS is not available.")
+        if not col:
+            raise ValueError("Select a column first.")
+
+        series = pd.to_numeric(self.output_dataframes[tss][col], errors="coerce").dropna()
+        if series.empty:
+            raise ValueError("Selected column has no numeric values to summarize.")
+        return tss, col, series
+
+    def calculate_sum(self):
+        try:
+            tss, col, series = self._selected_series()
+            total = series.sum()
+            self.summary_result_var.set(f"SUM | TSS={tss} | Column={col} | Value={total:.6f}")
+        except Exception as exc:
+            messagebox.showwarning("Summary", str(exc))
+
+    def calculate_average(self):
+        try:
+            tss, col, series = self._selected_series()
+            avg = series.mean()
+            self.summary_result_var.set(f"AVERAGE | TSS={tss} | Column={col} | Value={avg:.6f}")
+        except Exception as exc:
+            messagebox.showwarning("Summary", str(exc))
+
     def run_pipeline(self):
         try:
             energy_params_path, outdir, regen_eff, split_cross_tss = self._validate_inputs()
@@ -205,13 +275,16 @@ class PipelineGui(tk.Tk):
 
             os.makedirs(outdir, exist_ok=True)
             self._clear_output_tabs()
+            self.output_dataframes = {}
 
             for tss, df in out_by_tss.items():
                 output_name = safe_name(tss) + ".csv"
                 output_path = os.path.join(outdir, output_name)
                 df.to_csv(output_path, index=False)
                 self._show_dataframe_in_tab(str(tss), df)
+                self.output_dataframes[str(tss)] = df
 
+            self._refresh_summary_options()
             self.status_var.set(f"Done. Wrote {len(out_by_tss)} files to {outdir}")
             messagebox.showinfo("Success", f"Pipeline complete. Wrote {len(out_by_tss)} files to:\n{outdir}")
 
