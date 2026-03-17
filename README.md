@@ -56,3 +56,23 @@ python run_pipeline_tss_assigned.py \
   --outdir output_supply \
   --energy_params input2/rolling_stock_energy.csv
 ```
+
+## 5) Solar + demand combined GUI
+
+A second desktop GUI is included for the four-step solar analysis workflow (HH demand conversion, PVGIS cleanup, average profile plot, seasonal/annual metrics):
+
+```bash
+python solar_pipeline_gui.py
+```
+
+In this GUI you select:
+1. Half-hour demand input file.
+2. PVGIS CSV input file.
+3. Output folder.
+
+Then click **Run all** to generate:
+- `demand_hourly_wide.xlsx`
+- `pvgis_supply_hourly_wide.xlsx`
+- `avg_demand_supply_usedsolar_24h.xlsx`
+- `avg_demand_supply_usedsolar_24h.png`
+- `solar_metrics_summary.xlsx`
