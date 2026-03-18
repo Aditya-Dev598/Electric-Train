@@ -76,3 +76,11 @@ Then click **Run all** to generate:
 - `avg_demand_supply_usedsolar_24h.xlsx`
 - `avg_demand_supply_usedsolar_24h.png`
 - `solar_metrics_summary.xlsx`
+
+## 6) Sample input files
+
+Sample files for the solar GUI are provided in `sample_inputs/`:
+- `sample_inputs/sample_demand_half_hour.csv`
+- `sample_inputs/sample_pvgis.csv`
+
+Use these in `python solar_pipeline_gui.py` to test the full workflow quickly.
