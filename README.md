@@ -56,3 +56,47 @@ python run_pipeline_tss_assigned.py \
   --outdir output_supply \
   --energy_params input2/rolling_stock_energy.csv
 ```
+
+## 5) Solar + demand combined GUI
+
+A second desktop GUI is included for the four-step solar analysis workflow (HH demand conversion, PVGIS cleanup, average profile plot, seasonal/annual metrics):
+
+```bash
+python solar_pipeline_gui.py
+```
+
+In this GUI you select:
+1. Half-hour demand input file.
+2. PVGIS CSV input file.
+3. Output folder.
+
+Then click **Run all** to generate:
+- `demand_hourly_wide.xlsx`
+- `pvgis_supply_hourly_wide.xlsx`
+- `avg_demand_supply_usedsolar_24h.xlsx`
+- `avg_demand_supply_usedsolar_24h.png`
+- `solar_metrics_summary.xlsx`
+
+### Run on Windows (PowerShell)
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python solar_pipeline_gui.py
+```
+
+If script execution is blocked in PowerShell, run this once in the current shell and retry activation:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+## 6) Sample input files
+
+Sample files for the solar GUI are provided in `sample_inputs/`:
+- `sample_inputs/sample_demand_half_hour.csv`
+- `sample_inputs/sample_pvgis.csv`
+
+Use these in `python solar_pipeline_gui.py` to test the full workflow quickly.
