@@ -77,6 +77,22 @@ Then click **Run all** to generate:
 - `avg_demand_supply_usedsolar_24h.png`
 - `solar_metrics_summary.xlsx`
 
+### Run on Windows (PowerShell)
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python solar_pipeline_gui.py
+```
+
+If script execution is blocked in PowerShell, run this once in the current shell and retry activation:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
 ## 6) Sample input files
 
 Sample files for the solar GUI are provided in `sample_inputs/`:
